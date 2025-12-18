@@ -4,7 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FriendRequestController;
-
+use App\Http\Controllers\UserMatchController;
 
 
 Route::post ('/register', [AuthController::class, 'register']);
@@ -28,4 +28,10 @@ Route::middleware('auth:sanctum')->group(function(){
 
     // Annuler / supprimer
     Route::delete('/friend-requests/{friendRequest}', [FriendRequestController::class, 'destroy']);
+
+    Route::get('/matches', [UserMatchController::class, 'index']);
+
+    Route::get('/matches/{userMatch}', [UserMatchController::class, 'show']);
+
+    Route::delete('/matches/{userMatch}', [UserMatchController::class, 'destroy']);
 });

@@ -8,58 +8,66 @@ use Illuminate\Http\Request;
 class UserMatchController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     *  Liste de tous mes matchs
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $user = $request->user();
+
+        $matches = UserMatch::where('user_id', $user->id)
+            ->with('matchedUser')
+            ->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $matches
+        ], 200);
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Voir un match précis
      */
-    public function create()
+    public function show(UserMatch $userMatch, Request $request)
     {
-        //
+        // Sécurité : seul le propriétaire peut voir
+        if ($request->user()->id !== $userMatch->user_id) {
+            return response()->json([
+                'message' => 'Accès interdit'
+            ], 403);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $userMatch->load('matchedUser')
+        ], 200);
     }
 
     /**
-     * Store a newly created resource in storage.
+     *Supprimer un match (unfriend)
      */
-    public function store(Request $request)
+    public function destroy(UserMatch $userMatch, Request $request)
     {
-        //
-    }
+        $user = $request->user();
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(UserMatch $userMatch)
-    {
-        //
-    }
+        // Sécurité
+        if ($user->id !== $userMatch->user_id) {
+            return response()->json([
+                'message' => 'Action non autorisée'
+            ], 403);
+        }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(UserMatch $userMatch)
-    {
-        //
-    }
+        // Supprimer les deux côtés du match
+        UserMatch::where('user_id', $userMatch->user_id)
+            ->where('matched_user_id', $userMatch->matched_user_id)
+            ->delete();
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, UserMatch $userMatch)
-    {
-        //
-    }
+        UserMatch::where('user_id', $userMatch->matched_user_id)
+            ->where('matched_user_id', $userMatch->user_id)
+            ->delete();
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(UserMatch $userMatch)
-    {
-        //
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Match supprimé'
+        ], 200);
     }
 }

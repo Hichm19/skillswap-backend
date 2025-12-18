@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\FriendRequest;
 use Illuminate\Http\Request;
+use App\Models\UserMatch;
 
 class FriendRequestController extends Controller
 {
@@ -84,27 +85,55 @@ class FriendRequestController extends Controller
     }
 
  
-    public function update(Request $request, FriendRequest $friendRequest)
-    {
-        $request->validate([
-            'status' => 'required|in:accepted,refused'
-        ]);
+    public function update(Request $request, FriendRequest $friendRequest){
+    $request->validate([
+        'status' => 'required|in:accepted,refused'
+    ]);
 
-        
-        if ($request->user()->id !== $friendRequest->receiver_id) {
-            return response()->json([
-                'message' => 'Action non autorisée'
-            ], 403);
-        }
-
-        $friendRequest->update([
-            'status' => $request->status
-        ]);
-
+    // Seul le receiver peut répondre
+    if ($request->user()->id !== $friendRequest->receiver_id) {
         return response()->json([
-            'status' => 'success',
-            'data' => $friendRequest
-        ], 200);
+            'message' => 'Action non autorisée'
+        ], 403);
+    }
+
+    // Sécurité : empêcher double traitement
+    if ($friendRequest->status !== 'pending') {
+        return response()->json([
+            'message' => 'Cette demande a déjà été traitée'
+        ], 409);
+    }
+
+    // Mise à jour du statut
+    $friendRequest->update([
+        'status' => $request->status
+    ]);
+
+    // SI ACCEPTÉ → CRÉATION DU MATCH
+    if ($request->status === 'accepted') {
+
+        // Éviter les doublons de match
+        $exists = UserMatch::where(function ($q) use ($friendRequest) {
+            $q->where('user_id', $friendRequest->sender_id)
+              ->where('matched_user_id', $friendRequest->receiver_id);
+        })->orWhere(function ($q) use ($friendRequest) {
+            $q->where('user_id', $friendRequest->receiver_id)
+              ->where('matched_user_id', $friendRequest->sender_id);
+        })->exists();
+
+        if (!$exists) {
+            UserMatch::create([
+                'user_id' => $friendRequest->sender_id,
+                'matched_user_id' => $friendRequest->receiver_id,
+                'score' => null
+            ]);
+        }
+    }
+
+    return response()->json([
+        'status' => 'success',
+        'data' => $friendRequest
+    ], 200);
     }
 
    
