@@ -8,7 +8,8 @@ use Illuminate\Http\Request;
 class UserMatchController extends Controller
 {
     /**
-     *  Liste de tous mes matchs
+     * Voir tous mes matchs
+     * GET /api/matches
      */
     public function index(Request $request)
     {
@@ -26,11 +27,17 @@ class UserMatchController extends Controller
 
     /**
      * Voir un match précis
+     * GET /api/matches/{id}
      */
     public function show(UserMatch $userMatch, Request $request)
     {
-        // Sécurité : seul le propriétaire peut voir
-        if ($request->user()->id !== $userMatch->user_id) {
+        $user = $request->user();
+
+        // Sécurité : les deux personnes du match peuvent voir
+        if (
+            $user->id !== $userMatch->user_id &&
+            $user->id !== $userMatch->matched_user_id
+        ) {
             return response()->json([
                 'message' => 'Accès interdit'
             ], 403);
@@ -43,31 +50,35 @@ class UserMatchController extends Controller
     }
 
     /**
-     *Supprimer un match (unfriend)
+     * 🔹 Supprimer un match (unfriend)
+     * DELETE /api/matches/{id}
      */
     public function destroy(UserMatch $userMatch, Request $request)
     {
         $user = $request->user();
 
-        // Sécurité
-        if ($user->id !== $userMatch->user_id) {
+        // Sécurité : seuls les membres du match peuvent supprimer
+        if (
+            $user->id !== $userMatch->user_id &&
+            $user->id !== $userMatch->matched_user_id
+        ) {
             return response()->json([
                 'message' => 'Action non autorisée'
             ], 403);
         }
 
-        // Supprimer les deux côtés du match
-        UserMatch::where('user_id', $userMatch->user_id)
-            ->where('matched_user_id', $userMatch->matched_user_id)
-            ->delete();
-
-        UserMatch::where('user_id', $userMatch->matched_user_id)
-            ->where('matched_user_id', $userMatch->user_id)
-            ->delete();
+        // Supprimer les DEUX côtés du match
+        UserMatch::where(function ($q) use ($userMatch) {
+            $q->where('user_id', $userMatch->user_id)
+              ->where('matched_user_id', $userMatch->matched_user_id);
+        })->orWhere(function ($q) use ($userMatch) {
+            $q->where('user_id', $userMatch->matched_user_id)
+              ->where('matched_user_id', $userMatch->user_id);
+        })->delete();
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Match supprimé'
+            'message' => 'Match supprimé avec succès'
         ], 200);
     }
 }

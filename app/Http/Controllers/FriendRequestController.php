@@ -122,12 +122,21 @@ class FriendRequestController extends Controller
         })->exists();
 
         if (!$exists) {
-            UserMatch::create([
-                'user_id' => $friendRequest->sender_id,
-                'matched_user_id' => $friendRequest->receiver_id,
-                'score' => null
-            ]);
+        // A → B
+        UserMatch::create([
+        'user_id' => $friendRequest->sender_id,
+        'matched_user_id' => $friendRequest->receiver_id,
+        'score' => null
+        ]);
+
+        // B → A
+        UserMatch::create([
+        'user_id' => $friendRequest->receiver_id,
+        'matched_user_id' => $friendRequest->sender_id,
+        'score' => null
+        ]);
         }
+
     }
 
     return response()->json([
