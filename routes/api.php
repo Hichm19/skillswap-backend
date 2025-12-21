@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FriendRequestController;
 use App\Http\Controllers\UserMatchController;
+use App\Http\Controllers\SkillController;
 
 
 Route::post ('/register', [AuthController::class, 'register']);

@@ -50,7 +50,7 @@ class UserMatchController extends Controller
     }
 
     /**
-     * 🔹 Supprimer un match (unfriend)
+     * Supprimer un match (unfriend)
      * DELETE /api/matches/{id}
      */
     public function destroy(UserMatch $userMatch, Request $request)

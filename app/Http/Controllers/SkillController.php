@@ -8,58 +8,79 @@ use Illuminate\Http\Request;
 class SkillController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Afficher la liste des skills
      */
     public function index()
     {
-        //
+        $skills = Skill::all();
+
+        return response()->json($skills);
     }
 
     /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
+     * Créer un nouveau skill
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'name' => 'required|string|max:255|unique:skills,name',
+            'categorie' => 'required|string|max:255',
+        ]);
+
+        $skill = Skill::create([
+            'name' => $request->name,
+            'categorie' => $request->categorie,
+        ]);
+
+        return response()->json([
+            'message' => 'Skill créé avec succès',
+            'skill' => $skill
+        ], 201);
     }
 
     /**
-     * Display the specified resource.
+     * Afficher un skill précis
      */
-    public function show(Skill $skill)
+    public function show($id)
     {
-        //
+        $skill = Skill::findOrFail($id);
+
+        return response()->json($skill);
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Mettre à jour un skill
      */
-    public function edit(Skill $skill)
+    public function update(Request $request, $id)
     {
-        //
+        $skill = Skill::findOrFail($id);
+
+        $request->validate([
+            'name' => 'required|string|max:255|unique:skills,name,' . $skill->id,
+            'categorie' => 'required|string|max:255',
+        ]);
+
+        $skill->update([
+            'name' => $request->name,
+            'categorie' => $request->categorie,
+        ]);
+
+        return response()->json([
+            'message' => 'Skill mis à jour avec succès',
+            'skill' => $skill
+        ]);
     }
 
     /**
-     * Update the specified resource in storage.
+     * Supprimer un skill
      */
-    public function update(Request $request, Skill $skill)
+    public function destroy($id)
     {
-        //
-    }
+        $skill = Skill::findOrFail($id);
+        $skill->delete();
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Skill $skill)
-    {
-        //
+        return response()->json([
+            'message' => 'Skill supprimé avec succès'
+        ]);
     }
 }
