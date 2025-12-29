@@ -2,64 +2,56 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\UserSkill;
+use App\Models\User;
+use App\Models\Skill;
 use Illuminate\Http\Request;
 
 class UserSkillController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Lister les compétences d’un utilisateur
      */
-    public function index()
+    public function index($userId)
     {
-        //
+        $user = User::with('skills')->findOrFail($userId);
+
+        return response()->json([
+            'user' => $user->name,
+            'skills' => $user->skills
+        ]);
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Ajouter une compétence à un utilisateur
      */
-    public function create()
+    public function store(Request $request, $userId)
     {
-        //
+        $request->validate([
+            'skill_id' => 'required|exists:skills,id'
+        ]);
+
+        $user = User::findOrFail($userId);
+
+        // évite les doublons 
+        $user->skills()->syncWithoutDetaching($request->skill_id);
+
+        return response()->json([
+            'message' => 'Compétence ajoutée avec succès'
+        ], 201);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Supprimer une compétence d’un utilisateur
      */
-    public function store(Request $request)
+    public function destroy($userId, $skillId)
     {
-        //
-    }
+        $user = User::findOrFail($userId);
+        $skill = Skill::findOrFail($skillId);
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(UserSkill $userSkill)
-    {
-        //
-    }
+        $user->skills()->detach($skill->id);
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(UserSkill $userSkill)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, UserSkill $userSkill)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(UserSkill $userSkill)
-    {
-        //
+        return response()->json([
+            'message' => 'Compétence supprimée'
+        ]);
     }
 }
