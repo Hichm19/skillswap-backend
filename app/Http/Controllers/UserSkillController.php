@@ -13,7 +13,7 @@ class UserSkillController extends Controller
      */
     public function index($userId)
     {
-        $user = User::with('skills')->findOrFail($userId);
+        $user->User::with("skills")->findOrFail($userId);
 
         return response()->json([
             'user' => $user->name,
@@ -21,7 +21,7 @@ class UserSkillController extends Controller
         ]);
     }
 
-    /**
+    /**hh
      * Ajouter une compétence à un utilisateur
      */
     public function store(Request $request, $userId)

@@ -3,63 +3,101 @@
 namespace App\Http\Controllers;
 
 use App\Models\Message;
+use App\Models\UserMatch;
 use Illuminate\Http\Request;
 
 class MessageController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Lister les messages d’un match
+     * GET /api/matches/{match}/messages
      */
-    public function index()
+    public function index(UserMatch $match, Request $request)
     {
-        //
+        // 1️⃣ Qui fait l’action ?
+        $user = $request->user();
+
+        // 2️⃣ Sécurité métier : seuls les deux amis peuvent voir
+        if (
+            $user->id !== $match->user_id &&
+            $user->id !== $match->matched_user_id
+        ) {
+            return response()->json([
+                'message' => 'Accès interdit'
+            ], 403);
+        }
+
+      
+        $messages = Message::where('user_match_id', $match->id)
+            ->with('user:id,name')
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        
+        return response()->json([
+            'status' => 'success',
+            'data' => $messages
+        ], 200);
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Envoyer un message
+     * POST /api/matches/{match}/messages
      */
-    public function create()
+    public function store(UserMatch $match, Request $request)
     {
-        //
+        
+        $user = $request->user();
+
+        
+        if (
+            $user->id !== $match->user_id &&
+            $user->id !== $match->matched_user_id
+        ) {
+            return response()->json([
+                'message' => 'Action non autorisée'
+            ], 403);
+        }
+
+        
+        $request->validate([
+            'content' => 'required|string|max:1000'
+        ]);
+
+       
+        $message = Message::create([
+            'user_id' => $user->id,
+            'user_match_id' => $match->id,
+            'content' => $request->content
+        ]);
+
+        
+        return response()->json([
+            'status' => 'success',
+            'data' => $message->load('user:id,name')
+        ], 201);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Supprimer un message (optionnel)
+     * DELETE /api/messages/{id}
      */
-    public function store(Request $request)
+    public function destroy(Message $message, Request $request)
     {
-        //
-    }
+        $user = $request->user();
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Message $message)
-    {
-        //
-    }
+        // Seul l’auteur du message peut supprimer
+        if ($user->id !== $message->user_id) {
+            return response()->json([
+                'message' => 'Action non autorisée'
+            ], 403);
+        }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Message $message)
-    {
-        //
-    }
+        $message->delete();
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Message $message)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Message $message)
-    {
-        //
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Message supprimé'
+        ], 200);
     }
 }
