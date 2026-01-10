@@ -122,14 +122,14 @@ class FriendRequestController extends Controller
         })->exists();
 
         if (!$exists) {
-        // A → B
+        // A -> B
         UserMatch::create([
         'user_id' => $friendRequest->sender_id,
         'matched_user_id' => $friendRequest->receiver_id,
         'score' => null
         ]);
 
-        // B → A
+        // B -> A
         UserMatch::create([
         'user_id' => $friendRequest->receiver_id,
         'matched_user_id' => $friendRequest->sender_id,
