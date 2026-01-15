@@ -90,6 +90,8 @@ class FriendRequestController extends Controller
         'status' => 'required|in:accepted,refused'
     ]);
 
+    \Log::info('Status reçu:', ['status' => $request->status]);
+
     // Seul le receiver peut répondre
     if ($request->user()->id !== $friendRequest->receiver_id) {
         return response()->json([
@@ -111,6 +113,10 @@ class FriendRequestController extends Controller
 
     // SI ACCEPTÉ → CRÉATION DU MATCH
     if ($request->status === 'accepted') {
+        \Log::info('Entrée dans le bloc accepted', [
+            'sender_id' => $friendRequest->sender_id,
+            'receiver_id' => $friendRequest->receiver_id
+        ]);
 
         // Éviter les doublons de match
         $exists = UserMatch::where(function ($q) use ($friendRequest) {
@@ -121,30 +127,38 @@ class FriendRequestController extends Controller
               ->where('matched_user_id', $friendRequest->sender_id);
         })->exists();
 
+        \Log::info('Vérification doublons', ['exists' => $exists]);
+
         if (!$exists) {
-        // A -> B
-        UserMatch::create([
-        'user_id' => $friendRequest->sender_id,
-        'matched_user_id' => $friendRequest->receiver_id,
-        'score' => null
-        ]);
+            \Log::info('Création des matchs...');
+            
+            // A -> B
+            $match1 = UserMatch::create([
+                'user_id' => $friendRequest->sender_id,
+                'matched_user_id' => $friendRequest->receiver_id,
+                'score' => null
+            ]);
+            \Log::info('Match A->B créé', ['id' => $match1->id]);
 
-        // B -> A
-        UserMatch::create([
-        'user_id' => $friendRequest->receiver_id,
-        'matched_user_id' => $friendRequest->sender_id,
-        'score' => null
-        ]);
+            // B -> A
+            $match2 = UserMatch::create([
+                'user_id' => $friendRequest->receiver_id,
+                'matched_user_id' => $friendRequest->sender_id,
+                'score' => null
+            ]);
+            \Log::info('Match B->A créé', ['id' => $match2->id]);
+        } else {
+            \Log::warning('Match déjà existant, création annulée');
         }
-
+    } else {
+        \Log::info('Status n\'est pas accepted, pas de création de match');
     }
 
     return response()->json([
         'status' => 'success',
         'data' => $friendRequest
     ], 200);
-    }
-
+}
    
     public function destroy(FriendRequest $friendRequest, Request $request)
     {
