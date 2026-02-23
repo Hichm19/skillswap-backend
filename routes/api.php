@@ -7,6 +7,8 @@ use App\Http\Controllers\FriendRequestController;
 use App\Http\Controllers\UserMatchController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\SkillController;
+use App\Http\Controllers\SuggestionController;
+use App\Http\Controllers\UserSkillController;
 
 
 Route::post ('/register', [AuthController::class, 'register']);
@@ -35,4 +37,12 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::get('/matches/{match}/messages', [MessageController::class, 'index']);
     Route::post('/matches/{match}/messages', [MessageController::class, 'store']);
     Route::delete('/messages/{message}', [MessageController::class, 'destroy']);
+
+    Route::get('/suggestions', [SuggestionController::class, 'index']);
+
+    Route::get('/skills', [SkillController::class, 'index']);
+
+    Route::get('/me/skills', [UserSkillController::class, 'index']);
+    Route::post('/me/skills', [UserSkillController::class, 'store']);
+    Route::delete('/me/skills/{skillId}', [UserSkillController::class, 'destroy']);
 });

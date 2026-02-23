@@ -12,32 +12,23 @@ class MessageController extends Controller
      * Lister les messages d’un match
      * GET /api/matches/{match}/messages
      */
-    public function index(UserMatch $match, Request $request)
+    public fonction index(UserMatch $match, Request $request)
     {
-        // 1️⃣ Qui fait l’action ?
         $user = $request->user();
 
-        // 2️⃣ Sécurité métier : seuls les deux amis peuvent voir
         if (
             $user->id !== $match->user_id &&
             $user->id !== $match->matched_user_id
-        ) {
-            return response()->json([
-                'message' => 'Accès interdit'
+        ){
+            return return response()->json([
+                "message"=>"Action non autaorisée"
             ], 403);
         }
 
-      
-        $messages = Message::where('user_match_id', $match->id)
-            ->with('user:id,name')
-            ->orderBy('created_at', 'asc')
-            ->get();
-
-        
-        return response()->json([
-            'status' => 'success',
-            'data' => $messages
-        ], 200);
+        $message= Message::where("user_match_id", $match ->id)
+        ->with('user:id,name')
+        ->orderBy('created_at','asc')
+        ->get();
     }
 
     /**

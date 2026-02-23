@@ -11,47 +11,35 @@ class UserSkillController extends Controller
     /**
      * Lister les compétences d’un utilisateur
      */
-    public function index($userId)
-    {
-        $user->User::with("skills")->findOrFail($userId);
+    public function index(Request $request)
+{
+    $user = $request->user();
+    return response()->json([
+        'user' => $user->name,
+        'skills' => $user->skills
+    ]);
+}
 
-        return response()->json([
-            'user' => $user->name,
-            'skills' => $user->skills
-        ]);
-    }
+public function store(Request $request)
+{
+    $request->validate([
+        'skill_id' => 'required|exists:skills,id',
+        'type' => 'required|in:teach,learn'
+    ]);
 
-    /**hh
-     * Ajouter une compétence à un utilisateur
-     */
-    public function store(Request $request, $userId)
-    {
-        $request->validate([
-            'skill_id' => 'required|exists:skills,id'
-        ]);
+    $user = $request->user();
 
-        $user = User::findOrFail($userId);
+    $user->skills()->syncWithoutDetaching([
+        $request->skill_id => ['type' => $request->type]
+    ]);
 
-        // évite les doublons 
-        $user->skills()->syncWithoutDetaching($request->skill_id);
+    return response()->json(['message' => 'Compétence ajoutée'], 201);
+}
 
-        return response()->json([
-            'message' => 'Compétence ajoutée avec succès'
-        ], 201);
-    }
-
-    /**
-     * Supprimer une compétence d’un utilisateur
-     */
-    public function destroy($userId, $skillId)
-    {
-        $user = User::findOrFail($userId);
-        $skill = Skill::findOrFail($skillId);
-
-        $user->skills()->detach($skill->id);
-
-        return response()->json([
-            'message' => 'Compétence supprimée'
-        ]);
-    }
+public function destroy(Request $request, $skillId)
+{
+    $user = $request->user();
+    $user->skills()->detach($skillId);
+    return response()->json(['message' => 'Compétence supprimée']);
+}
 }

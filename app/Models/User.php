@@ -33,9 +33,9 @@ class User extends Authenticatable
      * Relation Many-to-Many : l'utilisateur possède plusieurs skills
      */
     public function skills()
-    {
-        return $this->belongsToMany(Skill::class, 'user_skills');
-    }
+{
+    return $this->belongsToMany(Skill::class, 'user_skills')->withPivot('type');
+}
 
     /**
      * Matches envoyés par cet utilisateur
