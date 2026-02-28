@@ -24,6 +24,20 @@ class FriendRequestController extends Controller
         ], 200);
     }
 
+    public function friendAsk(Request $request)
+    {
+        $user = $request->user();
+        $sentRequests = FriendRequest::where('sender_id', $user->id)
+            ->where('status', 'pending')
+            ->with('receiver')
+            ->get();
+
+        return response()->json([
+            'status'=>'success',
+            'data'=> $sentRequests
+        ], 200);
+    }
+
     
     public function store(Request $request)
     {

@@ -22,6 +22,8 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::post('/friend-requests', [FriendRequestController::class, 'store']);
     // Voir les demandes reçues
     Route::get('/friend-requests', [FriendRequestController::class, 'index']);
+    // Voir les demandes que j'ai envoyer
+    Route::get('/friend-requests/sent', [FriendRequestController::class, 'friendAsk']);
     // Voir une demande spécifique
     Route::get('/friend-requests/{friendRequest}', [FriendRequestController::class, 'show']);
     // Accepter / refuser une demande

@@ -10,9 +10,10 @@ class MessageController extends Controller
 {
     /**
      * Lister les messages d’un match
-     * GET /api/matches/{match}/messages
+     * GET /api/matches/0{match}/messages
      */
     public fonction index(UserMatch $match, Request $request)
+    
     {
         $user = $request->user();
 
