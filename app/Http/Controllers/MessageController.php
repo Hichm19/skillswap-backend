@@ -8,40 +8,10 @@ use Illuminate\Http\Request;
 
 class MessageController extends Controller
 {
-    /**
-     * Lister les messages d’un match
-     * GET /api/matches/0{match}/messages
-     */
-    public fonction index(UserMatch $match, Request $request)
-    
+    public function index(UserMatch $match, Request $request)
     {
         $user = $request->user();
 
-        if (
-            $user->id !== $match->user_id &&
-            $user->id !== $match->matched_user_id
-        ){
-            return return response()->json([
-                "message"=>"Action non autaorisée"
-            ], 403);
-        }
-
-        $message= Message::where("user_match_id", $match ->id)
-        ->with('user:id,name')
-        ->orderBy('created_at','asc')
-        ->get();
-    }
-
-    /**
-     * Envoyer un message
-     * POST /api/matches/{match}/messages
-     */
-    public function store(UserMatch $match, Request $request)
-    {
-        
-        $user = $request->user();
-
-        
         if (
             $user->id !== $match->user_id &&
             $user->id !== $match->matched_user_id
@@ -51,35 +21,65 @@ class MessageController extends Controller
             ], 403);
         }
 
-        
+        $messages = Message::where(function ($q) use ($match) {
+                $q->where('sender_id', $match->user_id)
+                  ->where('receiver_id', $match->matched_user_id);
+            })
+            ->orWhere(function ($q) use ($match) {
+                $q->where('sender_id', $match->matched_user_id)
+                  ->where('receiver_id', $match->user_id);
+            })
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $messages
+        ]);
+    }
+
+    public function store(UserMatch $match, Request $request)
+    {
+        $user = $request->user();
+
+        if (
+            $user->id !== $match->user_id &&
+            $user->id !== $match->matched_user_id
+        ) {
+            return response()->json([
+                'message' => 'Action non autorisée'
+            ], 403);
+        }
+
         $request->validate([
             'content' => 'required|string|max:1000'
         ]);
 
-       
+        $receiverId = $user->id === $match->user_id
+            ? $match->matched_user_id
+            : $match->user_id;
+
         $message = Message::create([
-            'user_id' => $user->id,
-            'user_match_id' => $match->id,
-            'content' => $request->content
+            'sender_id'   => $user->id,
+            'receiver_id' => $receiverId,
+            'content'     => $request->content
         ]);
 
-        
+        $message->load('sender');
+
+        broadcast(new \App\Events\NewMessage($message));
+
         return response()->json([
             'status' => 'success',
-            'data' => $message->load('user:id,name')
+            'data'   => $message
         ], 201);
     }
 
-    /**
-     * Supprimer un message (optionnel)
-     * DELETE /api/messages/{id}
-     */
     public function destroy(Message $message, Request $request)
     {
         $user = $request->user();
 
-        // Seul l’auteur du message peut supprimer
-        if ($user->id !== $message->user_id) {
+        if ($user->id !== $message->sender_id) {
             return response()->json([
                 'message' => 'Action non autorisée'
             ], 403);
@@ -90,6 +90,6 @@ class MessageController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Message supprimé'
-        ], 200);
+        ]);
     }
 }

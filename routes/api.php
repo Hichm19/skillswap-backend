@@ -9,6 +9,7 @@ use App\Http\Controllers\MessageController;
 use App\Http\Controllers\SkillController;
 use App\Http\Controllers\SuggestionController;
 use App\Http\Controllers\UserSkillController;
+use App\Http\Controllers\UserController;
 
 
 Route::post ('/register', [AuthController::class, 'register']);
@@ -43,8 +44,16 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::get('/suggestions', [SuggestionController::class, 'index']);
 
     Route::get('/skills', [SkillController::class, 'index']);
+    Route::post('/skills', [SkillController::class, 'store']);
+    Route::get('/skills/{id}', [SkillController::class, 'show']);
+    Route::put('/skills/{id}', [SkillController::class, 'update']);
+    Route::delete('/skills/{id}', [SkillController::class, 'destroy']);
 
     Route::get('/me/skills', [UserSkillController::class, 'index']);
     Route::post('/me/skills', [UserSkillController::class, 'store']);
     Route::delete('/me/skills/{skillId}', [UserSkillController::class, 'destroy']);
+
+    Route::get('/users/search', [UserController::class, 'search']);
+
+    Route::get('/users/{id}', [UserController::class, 'show']);
 });

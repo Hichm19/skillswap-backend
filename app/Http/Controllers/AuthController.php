@@ -67,12 +67,16 @@ class AuthController extends Controller
     }
 
     public function me (Request $request){
+        $user=$request->user();
+        $user-> load('skills');
         return response()->json([
             "statut"=>"success",
             "user"=>[
-            "id"=>$request->user()->id,
-            "name"=>$request->user()->name,
-            "email"=>$request->user()->email,
+                "id"=>$user->id,
+                "name"=>$user->name,
+                "email"=>$user->email,
+                "bio"=>$user->bio,
+                "skills"=>$user->skills,
             ]
             ],200);
     }
