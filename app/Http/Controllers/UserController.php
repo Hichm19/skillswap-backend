@@ -35,4 +35,48 @@ class UserController extends Controller
       ]);
     }
 
+    public function update(Request $request)
+{
+    $user = $request->user();
+
+    $request->validate([
+    'name'  => 'sometimes|string|max:255',
+    'email' => 'sometimes|email|max:255',
+    'bio'   => 'sometimes|nullable|string|max:500',
+]);
+
+    $user->update($request->only(['name','email', 'bio']));
+
+    return response()->json([
+        'status' => 'success',
+        'data'   => $user
+    ]);
+}
+
+   public function uploadPhoto(Request $request)
+{
+    $request->validate([
+        'photo' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048'
+    ]);
+
+    $user = $request->user();
+
+    // Supprimer l'ancienne photo si elle existe
+    if ($user->profile_picture) {
+        $oldPath = str_replace('/storage/', 'public/', $user->profile_picture);
+        \Storage::delete($oldPath);
+    }
+
+    $path = $request->file('photo')->store('profile_pictures', 'public');
+
+    $user->update([
+        'profile_picture' => '/storage/' . $path
+    ]);
+
+    return response()->json([
+        'status' => 'success',
+        'profile_picture' => '/storage/' . $path
+    ]);
+}
+
 }

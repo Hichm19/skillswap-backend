@@ -4,32 +4,24 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\User;
-use App\Models\UserMatch;
 
 class Message extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
-        'user_match_id',
+        'sender_id',
+        'receiver_id',
         'content',
     ];
 
-    /**
-     * Le message appartient à un utilisateur (l'auteur)
-     */
-    public function user()
+    public function sender()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'sender_id');
     }
 
-    /**
-     * Le message appartient à un match/conversation
-     */
-    public function match()
+    public function receiver()
     {
-        return $this->belongsTo(UserMatch::class, 'user_match_id');
+        return $this->belongsTo(User::class, 'receiver_id');
     }
 }

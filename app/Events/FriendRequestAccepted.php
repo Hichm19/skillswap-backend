@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Events;
-
+use App\Models\FriendRequest;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
@@ -10,27 +10,34 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class FriendRequestAccepted
+class FriendRequestAccepted implements ShouldBroadcast
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
+    use Dispatchable, InteractsWithSockets;
 
-    /**
-     * Create a new event instance.
-     */
-    public function __construct()
+    public function __construct(public FriendRequest $friendRequest) {}
+
+    public function broadcastOn()
     {
-        //
+        return new Channel('user.' . $this->friendRequest->sender_id);
     }
 
-    /**
-     * Get the channels the event should broadcast on.
-     *
-     * @return array<int, \Illuminate\Broadcasting\Channel>
-     */
-    public function broadcastOn(): array
+    public function broadcastAs()
     {
-        return [
-            new PrivateChannel('channel-name'),
-        ];
+        return 'friend-request-accepted';
     }
+    public function broadcastWith()
+{
+    // Charger les deux relations
+    $this->friendRequest->load(['sender', 'receiver']);
+    
+    return [
+        'friendRequest' => [
+            'id' => $this->friendRequest->id,
+            'sender_id' => $this->friendRequest->sender_id,
+            'sender_name' => $this->friendRequest->sender?->name ?? 'Utilisateur',
+            'receiver_id' => $this->friendRequest->receiver_id,
+            'receiver_name' => $this->friendRequest->receiver?->name ?? 'Utilisateur',
+        ]
+    ];
+}
 }
