@@ -3,15 +3,21 @@ FROM php:8.2-cli
 WORKDIR /var/www
 
 RUN apt-get update && apt-get install -y \
-    git unzip curl libpq-dev libzip-dev
+    git unzip curl libzip-dev default-mysql-client
 
 RUN docker-php-ext-install pdo pdo_mysql zip
 
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
 COPY . .
 
-RUN curl -sS https://getcomposer.org/installer | php
-RUN php composer.phar install
+RUN composer install --no-dev --optimize-autoloader
+
+RUN chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
 
 EXPOSE 10000
 
-CMD php artisan serve --host=0.0.0.0 --port=10000
+CMD ["/start.sh"]
